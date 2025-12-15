@@ -1,0 +1,118 @@
+function SIR_flickerlyzer_wrapper(loc, t0, t1, tstep)
+% A wrapper function to call the SIR_flickerlyzer tool
+
+% Set default location if not spec'd in function call
+if ~exist('loc', 'var')
+	loc = 'Utq';
+end
+
+% Start date/time if not spec'd in function call
+if ~exist('t0', 'var')
+    t0 = datenum('2023-04-02');
+else
+    if ~isnumeric(t0)
+        t0 = datenum(t0);
+    end
+end
+
+% End date/time if not spec'd in function call
+if ~exist('t1', 'var')
+    t1 = datenum('2023-04-11');
+else
+    if ~isnumeric(t1)
+        t1 = datenum(t1);
+    end
+end
+
+% Set timestep between images if not spec'd in function call
+if ~exist('tstep', 'var')
+    tstep = 4*60; % Seconds
+end
+
+% Define base path and where to look for SIR files
+%basepath = ['/data/uaf/observatories/' loc '_seaiceradar'];
+basepath = './TestData';
+croppath = [basepath filesep 'Cropped'];
+outpathflick = [basepath filesep 'FlickerImages'];
+outpathmean = [basepath filesep 'StackMeanImages'];
+
+% Build a list of files between 2 specified date times 
+
+Nd = 1 + floor(t1) - floor(t0);
+croplist = cell(0,1);
+
+for d=1:Nd
+	yyyymmdd = datestr(floor(t0)+d-1, 'yyyymmdd');
+	cddir = [croppath filesep yyyymmdd];
+	dirlist = dir([cddir filesep '*IceRadar*_crop.png']);
+	Nf = numel(dirlist);
+	flist = cell(Nf,1);
+	for f=1:Nf
+        flist{f} = [dirlist(f).folder filesep dirlist(f).name];
+    end    	
+	croplist = [croplist; flist];
+	fprintf([yyyymmdd ' : %d files.\n'], Nf);
+end
+
+% Exclude files whose timestamp is before t0 or after t1
+% (allowing for some fuzziness)
+dtrexp = ['[1-2][0-9][0-9][0-9][0-1][0-9][0-3][0-9]_' ...
+          '[0-2][0-9][0-5][0-9][0-5][0-9]'];
+tfuzz_sec = tstep/2;         % Half the time step
+tfuzz = tfuzz_sec/86400;
+tstamp = regexp(croplist, dtrexp, 'match', 'once');
+ft = datenum(tstamp, 'yyyymmdd_HHMMSS');
+ti = (ft >= (t0-tfuzz)) & (ft <= (t1+tfuzz));
+croplist = croplist(ti);
+ft = ft(ti);
+
+% Exclude files whose timestamp isn't 
+% an integer multiple of tstep seconds
+% from the first file's timestamp
+% (allowing for some more fuzzyiness)
+ftsec = (ft-ft(1))*86400;
+fti = ftsec/tstep;
+ftr = mod(fti, 1);
+ifuzz = 2/tstep;   % Rotation period of radar as fraction of timestep
+keepi = (ftr < ifuzz) | (ftr > (1-ifuzz));
+croplist = croplist(keepi);
+
+fprintf('croplist: %d files.\n', numel(croplist));
+
+% Make output path as necessary 
+if ~exist(outpathflick, 'file')
+    mkdir(outpathflick);
+end
+if ~exist(outpathflick, 'file')
+    mkdir(outpathflick);
+end
+
+% Define stack size
+Ns = 3;
+%Ns = 5;
+
+% Define threshold
+%thresh = 0.05;
+thresh = 1;
+
+% Set filter radius option
+filtrad = 3;
+
+% Set meanimgout option
+meanimgout = 0;
+
+% Set statsout option
+statsout = 0;
+
+% Call flickerlzer if there are enough SIR files found
+if numel(croplist) >= Ns
+    SIR_flickerlyzer_improved(croplist, 'Ns', Ns, ...
+                                        'outpathflick', outpathflick, ...
+                                        'thresh', thresh, ...
+                                        'filtrad', filtrad, ...
+                                        'meanimgout', meanimgout, ...
+                                        'statsout', statsout, ...
+                                        'owrite', 1);
+end
+
+end
