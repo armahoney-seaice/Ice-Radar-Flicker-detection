@@ -1,0 +1,81 @@
+====================================================
+UAF ice radar flicker detection code base
+
+
+==========================
+OVERVIEW
+
+This tool creates "flicker" images from a specified squence of sea ice radar (SIR) images 
+Flickering is defined by calculating the pixel-wise normalized standard deviation of 
+of pixels values in the image sequence.
+
+Normalized normalized standard deviation is defined as:
+
+	sigma* = sigma / sqrt(b_mean)
+
+where:
+
+	sigma = pixel-wise standard deviation of pixel brightness
+	p_mean = pixel-wise mean brightness
+
+A pixel is consider to be flickering if sigma* > sigma_flick (typically = 1)
+
+If a pixel is not flickering, it is considered to be steady.
+
+
+==========================
+CODE SUMMARY
+
+=== PRIMARY FUNCTIONS ===
+
+--- Flicker image generator
+		SIR_flickerlyzer(sirlist, varargin)
+		
+    This function takes a sequence of SIR images and feeds them into a first-in-first-out stack of N images
+    A flicker image is produced for every complete stack (i.e., 1 + sequence_length - N)
+    Optionally, this tool creates a mean image for each stack as well.
+                                         
+
+
+--- Flickerlyzer Wrapper
+        SIR_flickerlyzer_wrapper
+
+  	A example wrapper function for running the Flickerlyzer on a long series of SIR images
+  	
+
+--- Flickerlyzer Demo
+        SIR_flickerlyzer_demo
+
+  	A simple function that serves as a wrapper for running the code base with the test data included in this repository
+
+   
+=== ANCILIARY FUNCTIONS ===
+
+
+--- Flicker filter: 
+		fflick = SIR_flicker_filter(flickimg, rad)
+
+    This function applies a sequence of opening and closing operations to remove small regions of flickering steady pixels from flicker image
+
+--- Custom color ramp generator
+        cmap = generatecolorramp(coldefs, Ncols)
+
+    Tool for making linear color ramps between specified colors.
+    Used for making the split color ramps for flickering and steady pixels
+
+
+==========================
+DEMO DATA
+
+Test data for this code base are contained in the "TestData" folder, which contains following:
+
+--- Cropped
+	A folder containing cropped SIR images, produced as a "raw" data product from each SIR system
+	Images are organized into subfolder first by year and then calendar day (i.e., yyyy/yyyymmdd)
+
+---	FlickerImages
+	A folder containing flicker images output by running SIR_flickerlyzer_demo
+
+---	StackMeans
+	A folder containing stack mean images output by running SIR_flickerlyzer_demo
+

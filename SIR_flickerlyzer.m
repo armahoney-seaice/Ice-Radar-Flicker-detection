@@ -1,9 +1,14 @@
-function SIR_flickerlyzer_improved(sirlist, varargin)
-% Function to detect "flickering" in sea ice radar (SIR) imagery
-% through simple calculation of pixel-wise standard deviation
-% from a sequence of images. Now also generates an pixel-wise average
-% image corresponding to each flikcer image produced
+function SIR_flickerlyzer(sirlist, varargin)
+% Function to detect "flickering" in a sequence of sea ice radar (SIR) imagery
+% - calculates pixel normalized standard deviation, Qstdn
+% - assigns flickering status if Qstdn > thresh (=1, by default)
+% - non flickering pixels are considered "steady"
+% Flicker image is output as color-coded images with split color map
+% - brightness values are scaled in range 0-127
+% - steady pixels are assigned a 128-color grayscale color map
+% - flickering pixels  are assigned a 128-color cyanscale color map
 
+% -----------------------------------------------------------------------
 % USAGE:
 % SIR_flickerlyzer(sirlist)
 % SIR_flickerlyzer(__, 'Ns', Ns)
